@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .welcome-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .welcome-banner h2 {
+            color: white;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .welcome-banner p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+        }
+        
+        .portal-card {
+            background: #020617;
+            border-radius: 15px;
+            padding: 30px;
+            width: 350px;
+            box-shadow: 0 0 20px rgba(56,189,248,0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .portal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 30px rgba(56,189,248,0.5);
+        }
+        
+        .portal-card h2 {
+            color: #38bdf8;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+        
+        .portal-card p {
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #94a3b8;
+        }
+        
+        .icon-large {
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .logout-btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 30px;
+            background: #ef4444;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body class="dark">
+
+    <div class="container">
+        <div class="welcome-banner">
+            <h2>👋 Welcome, {{ reg_number }}!</h2>
+            <p>Access your meal booking and feedback portal</p>
+        </div>
+
+        <div class="card-box">
+            <div class="portal-card">
+                <div class="icon-large">🍽️</div>
+                <h2>Food Pre-Booking</h2>
+                <p>Book your meals in advance to help the kitchen prepare the right quantity and reduce food wastage.</p>
+                <ul style="text-align: left; color: #94a3b8; font-size: 14px; margin-bottom: 20px;">
+                    <li>View today's menu</li>
+                    <li>Select meals you'll eat</li>
+                    <li>Help reduce waste</li>
+                </ul>
+                <a href="/food" class="btn">Book Meals →</a>
+            </div>
+
+            <div class="portal-card">
+                <div class="icon-large">📋</div>
+                <h2>Food Quality Survey</h2>
+                <p>Share your feedback about food taste and quantity to help improve meal quality and planning.</p>
+                <ul style="text-align: left; color: #94a3b8; font-size: 14px; margin-bottom: 20px;">
+                    <li>Rate today's taste</li>
+                    <li>Report quantity issues</li>
+                    <li>Improve future meals</li>
+                </ul>
+                <a href="/food_survey" class="btn">Give Feedback →</a>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <a href="/logout" class="logout-btn">🚪 Logout</a>
+        </div>
+    </div>
+
+</body>
+</html>

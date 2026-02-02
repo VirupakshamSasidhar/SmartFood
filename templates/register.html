@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Login – Smart Food Management</title>
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0f1117;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #e2e8f0;
+    padding: 20px;
+}
+
+/* orbs */
+.orb {
+    position: fixed; border-radius: 50%;
+    filter: blur(100px); opacity: .22;
+    pointer-events: none; z-index: 0;
+}
+.orb-1 { width:380px; height:380px; background:#7c6af5; top:-100px; left:-120px; }
+.orb-2 { width:300px; height:300px; background:#f07070; bottom:-80px; right:-100px; }
+.orb-3 { width:200px; height:200px; background:#50c878; top:50%; left:55%; }
+
+/* card */
+.card {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 400px;
+    background: rgba(30,32,42,.9);
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 20px;
+    padding: 44px 32px 36px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.5);
+}
+
+/* header */
+.icon { font-size: 2.8rem; text-align: center; margin-bottom: 8px; }
+h1 { text-align:center; font-size:1.5rem; font-weight:700; color:#eee; margin-bottom:4px; }
+.sub { text-align:center; color:#6b7280; font-size:.8rem; margin-bottom:32px; }
+
+/* label */
+.lbl {
+    display: block; color:#9ca3af; font-size:.68rem;
+    font-weight:600; text-transform:uppercase; letter-spacing:1.2px; margin-bottom:8px;
+}
+
+/* input */
+.inp {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: #fff;
+    background: #1a1c24;
+    border: 2px solid #2e3040;
+    border-radius: 12px;
+    outline: none;
+    transition: border-color .25s, box-shadow .25s;
+    caret-color: #7c6af5;
+}
+.inp:focus {
+    border-color: #7c6af5;
+    box-shadow: 0 0 0 3px rgba(124,106,245,.2);
+}
+.inp.ok {
+    border-color: #50c878;
+    box-shadow: 0 0 0 3px rgba(80,200,120,.15);
+}
+.inp.err {
+    border-color: #f07070;
+    box-shadow: 0 0 0 3px rgba(240,112,112,.15);
+}
+
+/* hint */
+.hint { font-size:.7rem; color:#4b5563; text-align:center; margin-top:8px; margin-bottom:4px; }
+
+/* error text */
+.err-txt {
+    font-size:.76rem; color:#f07070; text-align:center;
+    margin-top:6px; min-height:1em;
+    padding: 0 4px;
+}
+
+/* server error box (from Flask) */
+.srv-err {
+    margin-top:16px; padding:10px 14px;
+    background:rgba(240,112,112,.1);
+    border:1px solid rgba(240,112,112,.25);
+    border-radius:10px; color:#f07070;
+    font-size:.76rem; text-align:center;
+}
+
+/* button */
+.btn {
+    display: block; width: 100%; padding: 14px;
+    margin-top: 24px;
+    background: linear-gradient(135deg, #7c6af5, #6a5acd);
+    color: #fff; font-size: .92rem; font-weight: 600; letter-spacing: .6px;
+    border: none; border-radius: 12px; cursor: pointer;
+    box-shadow: 0 4px 18px rgba(124,106,245,.35);
+    transition: transform .15s, box-shadow .2s, opacity .2s;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(124,106,245,.45); }
+.btn:disabled { opacity: .35; cursor: not-allowed; transform: none; box-shadow: none; }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="card">
+    <div class="icon">🎓</div>
+    <h1>Student Authentication</h1>
+    <p class="sub">Enter your registration number to continue</p>
+
+    <form method="post" action="/student_login" id="regForm">
+        <label class="lbl" for="reg_number">Registration Number</label>
+
+        <input class="inp" type="text" id="reg_number" name="reg_number"
+               placeholder="Y24CM133" maxlength="8"
+               autocomplete="off" spellcheck="false">
+
+        <p class="hint">Format: Y24CM133 – Y24CM198</p>
+        <p class="err-txt" id="errMsg"></p>
+
+        <button type="submit" class="btn" id="submitBtn" disabled>Continue</button>
+
+        {% if error %}
+            <p class="srv-err">{{ error }}</p>
+        {% endif %}
+    </form>
+</div>
+
+<script>
+(function(){
+    var inp    = document.getElementById('reg_number');
+    var errMsg = document.getElementById('errMsg');
+    var btn    = document.getElementById('submitBtn');
+    var form   = document.getElementById('regForm');
+
+    function check(){
+        // Force the actual value to uppercase so this.value always matches what's displayed
+        inp.value = inp.value.toUpperCase();
+
+        var v = inp.value;
+
+        // Reset styles
+        inp.className = 'inp';
+        errMsg.textContent = '';
+        btn.disabled = true;
+
+        // Still typing — stay neutral, no error yet
+        if(v.length < 8){
+            // Only show error if they clearly have a wrong prefix (typed 5+ chars and it's wrong)
+            if(v.length >= 5 && !/^Y24CM/.test(v)){
+                inp.classList.add('err');
+                errMsg.textContent = 'Must start with Y24CM';
+            }
+            return;
+        }
+
+        // Exactly 8 chars from here on
+        // Check prefix
+        if(!/^Y24CM/.test(v)){
+            inp.classList.add('err');
+            errMsg.textContent = 'Must start with Y24CM';
+            return;
+        }
+
+        // Check last 3 chars are digits
+        var numPart = v.slice(5);
+        if(!/^\d{3}$/.test(numPart)){
+            inp.classList.add('err');
+            errMsg.textContent = 'Last 3 characters must be digits';
+            return;
+        }
+
+        // Check range
+        var n = parseInt(numPart, 10);
+        if(n < 133 || n > 198){
+            inp.classList.add('err');
+            errMsg.textContent = 'Number must be between 133 and 198';
+            return;
+        }
+
+        // ✓ All good
+        inp.classList.add('ok');
+        btn.disabled = false;
+    }
+
+    // Run check on every keystroke
+    inp.addEventListener('input', check);
+
+    // Also run on submit so nothing slips through
+    form.addEventListener('submit', function(e){
+        check();
+        if(btn.disabled){
+            e.preventDefault();
+            inp.focus();
+        }
+    });
+})();
+</script>
+</body>
+</html>

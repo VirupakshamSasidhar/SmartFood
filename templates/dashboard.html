@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kitchen Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dark">
+
+<div class="container">
+    <h1>📊 Kitchen Staff Dashboard</h1>
+    <p class="subtitle">Today's Food Requirement & Feedback Summary</p>
+
+    <div class="card-box">
+        <div class="card">
+            <h2>🍳 Breakfast</h2>
+            <p>Total Students: <strong>{{ stats.breakfast }}</strong></p>
+        </div>
+
+        <div class="card">
+            <h2>🍛 Lunch</h2>
+            <p>Total Students: <strong>{{ stats.lunch }}</strong></p>
+        </div>
+
+        <div class="card">
+            <h2>🌙 Dinner</h2>
+            <p>Total Students: <strong>{{ stats.dinner }}</strong></p>
+        </div>
+    </div>
+
+    <br>
+
+    <div class="card-box">
+        <div class="card">
+            <h2>⭐ Average Taste Rating</h2>
+            <p>{{ stats.avg_rating }}</p>
+        </div>
+
+        <div class="card">
+            <h2>📦 Quantity Feedback</h2>
+            <p>Less: {{ stats.qty_less }}</p>
+            <p>Enough: {{ stats.qty_enough }}</p>
+            <p>Excess: {{ stats.qty_excess }}</p>
+        </div>
+
+        <div class="card">
+            <h2>💡 Smart Suggestion</h2>
+            <p>{{ stats.suggestion }}</p>
+        </div>
+    </div>
+
+    <br>
+    <a href="/logout" class="btn">🚪 Logout</a>
+</div>
+
+</body>
+</html>

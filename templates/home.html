@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Food Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .role-card {
+            background: #020617;
+            border-radius: 15px;
+            padding: 40px;
+            width: 320px;
+            box-shadow: 0 0 25px rgba(56,189,248,0.4);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+        
+        .role-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 35px rgba(56,189,248,0.6);
+        }
+        
+        .role-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .role-card h2 {
+            color: #38bdf8;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        
+        .role-card p {
+            font-size: 15px;
+            text-align: center;
+            color: #94a3b8;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        
+        .role-card .btn {
+            width: 100%;
+            text-align: center;
+            padding: 15px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body class="dark">
+
+    <div class="container">
+        <h1>🍽️ Smart Food Management System</h1>
+        <p class="subtitle">Reducing Food Wastage • Helping Hostel & Migrant Students</p>
+        
+        <p style="text-align: center; margin: 30px 0; font-size: 18px; color: #94a3b8;">
+            Please select your role to continue
+        </p>
+
+        <div class="card-box">
+            <div class="role-card" onclick="location.href='/student_login'">
+                <div class="role-icon">🎓</div>
+                <h2>Student Portal</h2>
+                <p>Access meal booking, view daily menus, and submit feedback on food quality and quantity.</p>
+                <a href="/student_login" class="btn">Student Login</a>
+            </div>
+
+            <div class="role-card" onclick="location.href='/admin_login'">
+                <div class="role-icon">👨‍🍳</div>
+                <h2>Kitchen Administration</h2>
+                <p>View meal demand analytics, check student bookings, and optimize food preparation to reduce waste.</p>
+                <a href="/admin_login" class="btn">Admin Login</a>
+            </div>
+        </div>
+        
+        <p style="text-align: center; margin-top: 40px; color: #64748b; font-size: 14px;">
+            © 2024 Smart Food Management System | Built to reduce food wastage
+        </p>
+    </div>
+
+</body>
+</html>

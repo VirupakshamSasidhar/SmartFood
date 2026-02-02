@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Food Quality & Quantity Survey</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dark">
+
+<div class="container">
+    <h1>📋 Food Quality & Quantity Survey</h1>
+    <p class="subtitle">Your feedback helps us reduce food waste and improve quality</p>
+
+    <form method="post" class="card">
+
+        <label>⭐ Rate Today's Taste (1 = Bad, 5 = Excellent)</label>
+        <select name="rating" required>
+            <option value="1">1 ⭐</option>
+            <option value="2">2 ⭐⭐</option>
+            <option value="3">3 ⭐⭐⭐</option>
+            <option value="4">4 ⭐⭐⭐⭐</option>
+            <option value="5">5 ⭐⭐⭐⭐⭐</option>
+        </select>
+
+        <br><br>
+
+        <label>📏 Quantity was:</label>
+        <select name="quantity" required>
+            <option value="Less">Less</option>
+            <option value="Enough">Enough</option>
+            <option value="Excess">Excess</option>
+        </select>
+
+        <br><br>
+
+        <button type="submit" class="btn">Submit Feedback</button>
+
+        {% if message %}
+            <div class="result">{{ message }}</div>
+        {% endif %}
+
+        <a href="/student_portal" class="back">⬅ Back to Portal</a>
+    </form>
+</div>
+
+</body>
+</html>

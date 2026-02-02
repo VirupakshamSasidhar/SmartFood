@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Food Pre-Booking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dark">
+
+<div class="container">
+    <h1>🍽 Food Pre-Booking Portal</h1>
+    <p class="subtitle">Select your meals for {{ day }} so the kitchen can avoid food wastage.</p>
+
+    <div class="card">
+        <h2>📋 Today's Menu ({{ day }})</h2>
+        <p><b>Breakfast:</b> {{ menu.breakfast }}</p>
+        <p><b>Lunch:</b> {{ menu.lunch }}</p>
+        <p><b>Dinner:</b> {{ menu.dinner }}</p>
+    </div>
+
+    <br>
+
+    <form method="post" class="card">
+
+        <div class="meal-row">
+            <label>🍳 Breakfast</label>
+            <select name="breakfast">
+                <option value="Yes">Will Eat</option>
+                <option value="No">Will Not Eat</option>
+            </select>
+        </div>
+
+        <div class="meal-row">
+            <label>🍛 Lunch</label>
+            <select name="lunch">
+                <option value="Yes">Will Eat</option>
+                <option value="No">Will Not Eat</option>
+            </select>
+        </div>
+
+        <div class="meal-row">
+            <label>🌙 Dinner</label>
+            <select name="dinner">
+                <option value="Yes">Will Eat</option>
+                <option value="No">Will Not Eat</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn">Submit Booking</button>
+
+        {% if result %}
+            <div class="result">{{ result }}</div>
+        {% endif %}
+
+        <a href="/student_portal" class="back">⬅ Back to Portal</a>
+    </form>
+</div>
+
+</body>
+</html>
