@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, session
 import datetime
-import pytz
 from collections import defaultdict
 
 app = Flask(__name__)
