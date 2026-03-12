@@ -3,43 +3,150 @@
 <head>
     <title>Food Quality & Quantity Survey</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .survey-card {
+            background: #020617;
+            border-radius: 14px;
+            padding: 26px 28px 20px;
+            width: 290px;
+            box-shadow: 0 0 18px rgba(56,189,248,0.2);
+            text-align: left;
+        }
+        .survey-card h2 { color: #38bdf8; font-size: 19px; margin-bottom: 6px; }
+
+        .window-badge {
+            display: inline-block;
+            font-size: 11px; font-weight: 600;
+            padding: 3px 9px; border-radius: 20px; margin-bottom: 14px;
+        }
+        .window-badge.open   { background: rgba(56,189,248,0.12); color: #38bdf8;  border: 1px solid #38bdf8; }
+        .window-badge.closed { background: rgba(100,116,139,0.1);  color: #64748b; border: 1px solid #334155; }
+        .window-badge.done   { background: rgba(74,222,128,0.1);   color: #4ade80; border: 1px solid #4ade80; }
+
+        .window-time { font-size: 11px; color: #64748b; margin-bottom: 14px; }
+
+        .survey-card label {
+            display: block; font-size: 13px; color: #94a3b8;
+            margin-bottom: 6px; margin-top: 12px;
+        }
+        .survey-card select {
+            width: 100%; padding: 9px 10px;
+            border-radius: 8px; background: #0f172a;
+            color: #e5e7eb; border: 1px solid #334155; font-size: 14px;
+        }
+        .survey-card button {
+            width: 100%; margin-top: 16px; padding: 10px;
+            background: #38bdf8; color: #020617;
+            border: none; border-radius: 8px;
+            font-weight: bold; font-size: 14px; cursor: pointer;
+        }
+        .survey-card button:hover { background: #0ea5e9; }
+        .survey-card button:disabled {
+            background: #1e293b; color: #475569; cursor: not-allowed;
+        }
+
+        .msg-success {
+            margin-top: 10px; padding: 8px 12px;
+            background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.3);
+            border-radius: 8px; color: #4ade80; font-size: 13px;
+        }
+        .msg-error {
+            margin-top: 10px; padding: 8px 12px;
+            background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 8px; color: #f87171; font-size: 13px;
+        }
+        .back { display:block; margin-top:24px; text-align:center; color:#38bdf8; text-decoration:none; }
+        .notice {
+            background: rgba(56,189,248,0.07); border: 1px solid rgba(56,189,248,0.2);
+            border-radius: 12px; padding: 14px 22px;
+            margin: 0 auto 28px; max-width: 780px;
+            font-size: 13px; color: #94a3b8; line-height: 1.8;
+        }
+        .notice b { color: #38bdf8; }
+    </style>
 </head>
 <body class="dark">
 
 <div class="container">
     <h1>📋 Food Quality & Quantity Survey</h1>
-    <p class="subtitle">Your feedback helps us reduce food waste and improve quality</p>
+    <p class="subtitle">Rate the meal you just had — one submission per meal per day</p>
 
-    <form method="post" class="card">
+    <div class="notice">
+        <b>Feedback Windows:</b><br>
+        🍳 <b>Breakfast</b> → 08:00 – 10:00 &nbsp;|&nbsp;
+        🍛 <b>Lunch</b>     → 12:00 – 14:00 &nbsp;|&nbsp;
+        🌙 <b>Dinner</b>    → 19:00 – 21:00
+    </div>
 
-        <label>⭐ Rate Today's Taste (1 = Bad, 5 = Excellent)</label>
-        <select name="rating" required>
-            <option value="1">1 ⭐</option>
-            <option value="2">2 ⭐⭐</option>
-            <option value="3">3 ⭐⭐⭐</option>
-            <option value="4">4 ⭐⭐⭐⭐</option>
-            <option value="5">5 ⭐⭐⭐⭐⭐</option>
-        </select>
+    {% if errors.general %}
+        <div class="msg-error" style="max-width:400px; margin: 0 auto 20px;">{{ errors.general }}</div>
+    {% endif %}
 
-        <br><br>
+    <div class="card-box" style="align-items:flex-start; justify-content:center; gap:24px;">
 
-        <label>📏 Quantity was:</label>
-        <select name="quantity" required>
-            <option value="Less">Less</option>
-            <option value="Enough">Enough</option>
-            <option value="Excess">Excess</option>
-        </select>
+        {% for meal, icon, label in [
+            ('breakfast', '🍳', 'Breakfast'),
+            ('lunch',     '🍛', 'Lunch'),
+            ('dinner',    '🌙', 'Dinner')
+        ] %}
+        {% set fs = feedback_status[meal] %}
+        <div class="survey-card">
+            <h2>{{ icon }} {{ label }}</h2>
 
-        <br><br>
+            {% if fs.already_given %}
+                <span class="window-badge done">✔ Feedback submitted</span>
+            {% elif fs.window_open %}
+                <span class="window-badge open">🟢 Open now</span>
+            {% else %}
+                <span class="window-badge closed">🔒 Closed</span>
+            {% endif %}
 
-        <button type="submit" class="btn">Submit Feedback</button>
+            <p class="window-time">
+                Feedback window: {{ "%02d"|format(fs.feedback_start) }}:00 –
+                {{ "%02d"|format(fs.feedback_end) }}:00
+            </p>
 
-        {% if message %}
-            <div class="result">{{ message }}</div>
-        {% endif %}
+            {% if results[meal] is defined %}
+                <div class="msg-success">{{ results[meal] }}</div>
+            {% elif errors[meal] is defined %}
+                <div class="msg-error">{{ errors[meal] }}</div>
+            {% endif %}
 
-        <a href="/student_portal" class="back">⬅ Back to Portal</a>
-    </form>
+            <form method="post">
+                <input type="hidden" name="meal_type" value="{{ meal }}">
+
+                <label>⭐ Taste Rating (1 = Bad, 5 = Excellent)</label>
+                <select name="rating" {% if not fs.can_submit %}disabled{% endif %} required>
+                    <option value="1">1 ⭐</option>
+                    <option value="2">2 ⭐⭐</option>
+                    <option value="3">3 ⭐⭐⭐</option>
+                    <option value="4">4 ⭐⭐⭐⭐</option>
+                    <option value="5">5 ⭐⭐⭐⭐⭐</option>
+                </select>
+
+                <label>📏 Quantity</label>
+                <select name="quantity" {% if not fs.can_submit %}disabled{% endif %} required>
+                    <option value="Less">Less</option>
+                    <option value="Enough">Enough</option>
+                    <option value="Excess">Excess</option>
+                </select>
+
+                <button type="submit" {% if not fs.can_submit %}disabled{% endif %}>
+                    {% if fs.already_given %}
+                        Already Submitted
+                    {% elif not fs.window_open %}
+                        Window Closed
+                    {% else %}
+                        Submit {{ label }} Feedback
+                    {% endif %}
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+
+    </div>
+
+    <a href="/student_portal" class="back">⬅ Back to Portal</a>
 </div>
 
 </body>
