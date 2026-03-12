@@ -106,9 +106,9 @@
                 {{ "%02d"|format(fs.feedback_end) }}:00
             </p>
 
-            {% if results[meal] is defined %}
+            {% if meal in results %}
                 <div class="msg-success">{{ results[meal] }}</div>
-            {% elif errors[meal] is defined %}
+            {% elif meal in errors %}
                 <div class="msg-error">{{ errors[meal] }}</div>
             {% endif %}
 
