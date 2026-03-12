@@ -3,53 +3,210 @@
 <head>
     <title>Kitchen Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .section-title {
+            color: #38bdf8;
+            font-size: 22px;
+            margin: 36px 0 16px;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 8px;
+            text-align: left;
+            max-width: 980px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* ── Meal stat card ── */
+        .meal-stat-card {
+            background: #020617;
+            border-radius: 14px;
+            padding: 26px 24px 20px;
+            width: 280px;
+            box-shadow: 0 0 18px rgba(56,189,248,0.2);
+            position: relative;
+            text-align: left;
+        }
+
+        .meal-stat-card h2 {
+            color: #38bdf8;
+            font-size: 19px;
+            margin-bottom: 14px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #94a3b8;
+            margin: 5px 0;
+        }
+
+        .stat-row strong { color: #e5e7eb; }
+
+        /* Reset status badge inside card */
+        .reset-badge {
+            display: inline-block;
+            margin-top: 14px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .reset-badge.live   { background: rgba(56,189,248,0.12); color: #38bdf8;  border: 1px solid #38bdf8; }
+        .reset-badge.done   { background: rgba(100,116,139,0.12); color: #64748b; border: 1px solid #334155; }
+
+        /* Manual reset button */
+        .reset-btn {
+            display: block;
+            width: 100%;
+            margin-top: 14px;
+            padding: 9px;
+            background: #7f1d1d;
+            color: #fca5a5;
+            border: 1px solid #991b1b;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.2s;
+        }
+        .reset-btn:hover { background: #991b1b; color: #fee2e2; }
+
+        /* Reset-all button */
+        .reset-all-btn {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 11px 28px;
+            background: #450a0a;
+            color: #fca5a5;
+            border: 1px solid #7f1d1d;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .reset-all-btn:hover { background: #7f1d1d; }
+
+        /* Summary cards at top */
+        .summary-card {
+            background: #020617;
+            border-radius: 12px;
+            padding: 22px 20px;
+            width: 200px;
+            text-align: center;
+            box-shadow: 0 0 14px rgba(56,189,248,0.15);
+        }
+        .summary-card h3 { color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .summary-card .big { font-size: 32px; font-weight: 700; color: #38bdf8; }
+
+        .current-time {
+            font-size: 13px;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+
+        .card-box { align-items: flex-start; }
+    </style>
 </head>
 <body class="dark">
 
 <div class="container">
     <h1>📊 Kitchen Staff Dashboard</h1>
-    <p class="subtitle">Today's Food Requirement & Feedback Summary</p>
+    <p class="subtitle">Live meal counts, feedback, and reset controls</p>
+    <p class="current-time">🕐 Current server time: <strong>{{ stats.current_time }}</strong></p>
 
-    <div class="card-box">
-        <div class="card">
-            <h2>🍳 Breakfast</h2>
-            <p>Total Students: <strong>{{ stats.breakfast }}</strong></p>
+    <!-- ── Summary row ── -->
+    <div class="card-box" style="justify-content:center; gap:16px; margin-bottom:10px;">
+        <div class="summary-card">
+            <h3>Total Students</h3>
+            <div class="big">{{ stats.total_students }}</div>
         </div>
-
-        <div class="card">
-            <h2>🍛 Lunch</h2>
-            <p>Total Students: <strong>{{ stats.lunch }}</strong></p>
+        <div class="summary-card">
+            <h3>Booked Today</h3>
+            <div class="big">{{ stats.students_booked }}</div>
         </div>
-
-        <div class="card">
-            <h2>🌙 Dinner</h2>
-            <p>Total Students: <strong>{{ stats.dinner }}</strong></p>
+        <div class="summary-card">
+            <h3>🍳 Breakfast</h3>
+            <div class="big">{{ stats.breakfast }}</div>
         </div>
-    </div>
-
-    <br>
-
-    <div class="card-box">
-        <div class="card">
-            <h2>⭐ Average Taste Rating</h2>
-            <p>{{ stats.avg_rating }}</p>
+        <div class="summary-card">
+            <h3>🍛 Lunch</h3>
+            <div class="big">{{ stats.lunch }}</div>
         </div>
-
-        <div class="card">
-            <h2>📦 Quantity Feedback</h2>
-            <p>Less: {{ stats.qty_less }}</p>
-            <p>Enough: {{ stats.qty_enough }}</p>
-            <p>Excess: {{ stats.qty_excess }}</p>
-        </div>
-
-        <div class="card">
-            <h2>💡 Smart Suggestion</h2>
-            <p>{{ stats.suggestion }}</p>
+        <div class="summary-card">
+            <h3>🌙 Dinner</h3>
+            <div class="big">{{ stats.dinner }}</div>
         </div>
     </div>
 
+    <!-- ── Per-meal detailed cards ── -->
+    <p class="section-title">📋 Per-Meal Details & Controls</p>
+
+    <div class="card-box" style="justify-content:center; gap:24px;">
+
+        {% for meal, icon, label in [
+            ('breakfast', '🍳', 'Breakfast'),
+            ('lunch',     '🍛', 'Lunch'),
+            ('dinner',    '🌙', 'Dinner')
+        ] %}
+        {% set rs = stats.reset_status[meal] %}
+        <div class="meal-stat-card">
+            <h2>{{ icon }} {{ label }}</h2>
+
+            <div class="stat-row">
+                <span>Students opted in</span>
+                <strong>{{ stats[meal] }}</strong>
+            </div>
+            <div class="stat-row">
+                <span>Avg taste rating</span>
+                <strong>{{ stats['avg_rating_' ~ meal] }}</strong>
+            </div>
+            <div class="stat-row">
+                <span>Qty: Less</span>
+                <strong>{{ stats['qty_' ~ meal]['Less'] }}</strong>
+            </div>
+            <div class="stat-row">
+                <span>Qty: Enough</span>
+                <strong>{{ stats['qty_' ~ meal]['Enough'] }}</strong>
+            </div>
+            <div class="stat-row">
+                <span>Qty: Excess</span>
+                <strong>{{ stats['qty_' ~ meal]['Excess'] }}</strong>
+            </div>
+
+            <div class="stat-row" style="margin-top:10px; font-style:italic;">
+                <span>💡 {{ stats['suggestion_' ~ meal] }}</span>
+            </div>
+
+            <!-- Auto-reset badge -->
+            {% if rs.reset_done %}
+                <span class="reset-badge done">✔ Auto-reset done (was {{ rs.will_reset_at }})</span>
+            {% else %}
+                <span class="reset-badge live">🟢 Live — auto-resets at {{ rs.will_reset_at }}</span>
+            {% endif %}
+
+            <!-- Manual reset button -->
+            <form method="post" action="/admin/reset/{{ meal }}"
+                  onsubmit="return confirm('Reset all {{ label }} data now?')">
+                <button type="submit" class="reset-btn">🗑 Reset {{ label }} Now</button>
+            </form>
+        </div>
+        {% endfor %}
+
+    </div>
+
+    <!-- ── Reset All ── -->
+    <div style="text-align:center; margin-top:30px;">
+        <form method="post" action="/admin/reset/all"
+              onsubmit="return confirm('Reset ALL meal data? This cannot be undone.')">
+            <button type="submit" class="reset-all-btn">⚠️ Reset ALL Meals Now</button>
+        </form>
+    </div>
+
     <br>
-    <a href="/logout" class="btn">🚪 Logout</a>
+    <a href="/logout" class="btn" style="display:inline-block; margin-top:10px;">🚪 Logout</a>
 </div>
 
 </body>
