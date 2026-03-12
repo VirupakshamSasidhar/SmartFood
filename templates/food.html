@@ -3,56 +3,246 @@
 <head>
     <title>Food Pre-Booking</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .meal-card {
+            background: #020617;
+            border-radius: 14px;
+            padding: 28px 30px;
+            width: 300px;
+            box-shadow: 0 0 18px rgba(56,189,248,0.25);
+            position: relative;
+        }
+
+        .meal-card h2 {
+            color: #38bdf8;
+            margin-bottom: 6px;
+            font-size: 20px;
+        }
+
+        .meal-card .menu-item {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 14px;
+        }
+
+        /* Window badge */
+        .window-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 9px;
+            border-radius: 20px;
+            margin-bottom: 14px;
+        }
+        .window-badge.open  { background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid #38bdf8; }
+        .window-badge.closed { background: rgba(148,163,184,0.1); color: #64748b; border: 1px solid #334155; }
+
+        .window-time {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 12px;
+        }
+
+        /* Submission counter dots */
+        .sub-counter {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+        }
+        .dot.used  { background: #38bdf8; }
+        .dot.empty { background: #1e293b; border: 1px solid #334155; }
+
+        /* Current choice pill */
+        .choice-pill {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .choice-pill.yes { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid #4ade80; }
+        .choice-pill.no  { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid #f87171; }
+        .choice-pill.none { background: rgba(148,163,184,0.1); color: #94a3b8; border: 1px solid #334155; }
+
+        /* Per-meal form */
+        .meal-form select {
+            width: 100%;
+            padding: 9px 10px;
+            border-radius: 8px;
+            background: #0f172a;
+            color: #e5e7eb;
+            border: 1px solid #334155;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .meal-form button {
+            width: 100%;
+            padding: 10px;
+            background: #38bdf8;
+            color: #020617;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .meal-form button:hover { background: #0ea5e9; }
+        .meal-form button:disabled {
+            background: #1e293b;
+            color: #475569;
+            cursor: not-allowed;
+        }
+
+        .msg-success {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(56,189,248,0.1);
+            border: 1px solid rgba(56,189,248,0.3);
+            border-radius: 8px;
+            color: #38bdf8;
+            font-size: 13px;
+        }
+        .msg-error {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 8px;
+            color: #f87171;
+            font-size: 13px;
+        }
+
+        .closed-overlay {
+            font-size: 13px;
+            color: #475569;
+            text-align: center;
+            padding: 16px 0 4px;
+        }
+
+        /* Notice box at top */
+        .notice {
+            background: rgba(56,189,248,0.07);
+            border: 1px solid rgba(56,189,248,0.2);
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin: 0 auto 30px;
+            max-width: 750px;
+            font-size: 13px;
+            color: #94a3b8;
+            line-height: 1.7;
+        }
+        .notice b { color: #38bdf8; }
+
+        .back { display:block; margin-top:20px; text-align:center; color:#38bdf8; text-decoration:none; }
+    </style>
 </head>
 <body class="dark">
 
 <div class="container">
     <h1>🍽 Food Pre-Booking Portal</h1>
-    <p class="subtitle">Select your meals for {{ day }} so the kitchen can avoid food wastage.</p>
+    <p class="subtitle">Select your meals within the allowed window – kitchen needs your input on time!</p>
 
-    <div class="card">
-        <h2>📋 Today's Menu ({{ day }})</h2>
-        <p><b>Breakfast:</b> {{ menu.breakfast }}</p>
-        <p><b>Lunch:</b> {{ menu.lunch }}</p>
-        <p><b>Dinner:</b> {{ menu.dinner }}</p>
+    <!-- Booking window notice -->
+    <div class="notice">
+        <b>Booking Windows (1 hour each, max {{ max_submissions }} submissions per meal):</b><br>
+        🌙 <b>Breakfast</b> (next day) → book tonight between <b>21:00 – 22:00</b><br>
+        ☀️ <b>Lunch</b> → book after breakfast between <b>09:00 – 10:00</b><br>
+        🌇 <b>Dinner</b> → book after lunch between <b>14:00 – 15:00</b>
     </div>
 
-    <br>
+    <!-- Today's menu -->
+    <div class="card" style="max-width:500px; margin: 0 auto 30px;">
+        <h2 style="color:#38bdf8; margin-bottom:12px;">📋 Today's Menu ({{ day }})</h2>
+        <p><b>🍳 Breakfast:</b> {{ menu.breakfast }}</p>
+        <p style="margin:6px 0;"><b>🍛 Lunch:</b> {{ menu.lunch }}</p>
+        <p><b>🌙 Dinner:</b> {{ menu.dinner }}</p>
+    </div>
 
-    <form method="post" class="card">
+    <!-- Per-meal cards -->
+    <div class="card-box" style="align-items:flex-start; margin-bottom:30px;">
 
-        <div class="meal-row">
-            <label>🍳 Breakfast</label>
-            <select name="breakfast">
-                <option value="Yes">Will Eat</option>
-                <option value="No">Will Not Eat</option>
-            </select>
+        {% for meal, icon, label in [
+            ('breakfast', '🍳', 'Breakfast'),
+            ('lunch',     '🍛', 'Lunch'),
+            ('dinner',    '🌙', 'Dinner')
+        ] %}
+        {% set ms = booking_status[meal] %}
+        <div class="meal-card">
+            <h2>{{ icon }} {{ label }}</h2>
+            <p class="menu-item">{{ menu[meal] }}</p>
+
+            <!-- Window open/closed badge -->
+            {% if ms.window_open %}
+                <span class="window-badge open">🟢 Window Open</span>
+            {% else %}
+                <span class="window-badge closed">🔒 Window Closed</span>
+            {% endif %}
+            <p class="window-time">Booking window: {{ "%02d"|format(ms.start_hour) }}:00 – {{ "%02d"|format(ms.end_hour) }}:00
+            {% if meal == 'breakfast' %} (prev. night → for tomorrow){% endif %}
+            </p>
+
+            <!-- Submission counter -->
+            <div class="sub-counter">
+                Submissions:
+                {% for i in range(max_submissions) %}
+                    {% if i < (max_submissions - ms.submissions_left) %}
+                        <span class="dot used" title="Used"></span>
+                    {% else %}
+                        <span class="dot empty" title="Available"></span>
+                    {% endif %}
+                {% endfor %}
+                <span>({{ ms.submissions_left }} left)</span>
+            </div>
+
+            <!-- Current saved choice -->
+            {% if ms.current_choice == 'Yes' %}
+                <span class="choice-pill yes">✔ Will Eat</span>
+            {% elif ms.current_choice == 'No' %}
+                <span class="choice-pill no">✘ Will Not Eat</span>
+            {% else %}
+                <span class="choice-pill none">— Not booked yet</span>
+            {% endif %}
+
+            <!-- Form (only active if window open AND submissions left) -->
+            {% set can_book = ms.window_open and ms.submissions_left > 0 %}
+            <form method="post" class="meal-form" style="margin-top:14px;">
+                <input type="hidden" name="meal" value="{{ meal }}">
+                <select name="choice" {% if not can_book %}disabled{% endif %}>
+                    <option value="Yes">✅ Will Eat</option>
+                    <option value="No">❌ Will Not Eat</option>
+                </select>
+                <button type="submit" {% if not can_book %}disabled{% endif %}>
+                    {% if not ms.window_open %}
+                        Window Closed
+                    {% elif ms.submissions_left == 0 %}
+                        Limit Reached
+                    {% else %}
+                        Save Preference
+                    {% endif %}
+                </button>
+            </form>
+
+            {% if meal in results %}
+                <div class="msg-success">{{ results[meal] }}</div>
+            {% endif %}
+            {% if meal in errors %}
+                <div class="msg-error">{{ errors[meal] }}</div>
+            {% endif %}
         </div>
+        {% endfor %}
 
-        <div class="meal-row">
-            <label>🍛 Lunch</label>
-            <select name="lunch">
-                <option value="Yes">Will Eat</option>
-                <option value="No">Will Not Eat</option>
-            </select>
-        </div>
+    </div>
 
-        <div class="meal-row">
-            <label>🌙 Dinner</label>
-            <select name="dinner">
-                <option value="Yes">Will Eat</option>
-                <option value="No">Will Not Eat</option>
-            </select>
-        </div>
-
-        <button type="submit" class="btn">Submit Booking</button>
-
-        {% if result %}
-            <div class="result">{{ result }}</div>
-        {% endif %}
-
-        <a href="/student_portal" class="back">⬅ Back to Portal</a>
-    </form>
+    <a href="/student_portal" class="back">⬅ Back to Portal</a>
 </div>
 
 </body>
