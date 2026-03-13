@@ -656,20 +656,13 @@ def admin_db_viewer():
     return render_template("db_viewer.html", active_table=active_table, counts=counts, data=data, extra=extra)
 
 
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect("/")
-
-
 @app.errorhandler(404)
 def page_not_found(e):
-    return redirect("/")
+    return "Page not found", 404
 
 @app.errorhandler(500)
 def server_error(e):
-    return redirect("/")
-
+    return "Internal server error", 500
 if __name__ == "__main__":
     init_db()
     app.run(debug=False)
