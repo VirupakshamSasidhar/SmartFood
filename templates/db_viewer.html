@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Database Viewer – Smart Food Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body.dark {
+            font-family: 'Syne', sans-serif;
+            background: #080c14;
+            color: #cbd5e1;
+        }
+
+        /* ── top bar ── */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 36px;
+            background: rgba(15,23,42,0.9);
+            border-bottom: 1px solid #1e293b;
+            position: sticky; top: 0; z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        .topbar-left { display: flex; align-items: center; gap: 14px; }
+        .topbar-title { font-size: 18px; font-weight: 800; color: #f1f5f9; letter-spacing: -0.3px; }
+        .topbar-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px; font-weight: 600;
+            padding: 3px 10px; border-radius: 20px;
+            background: rgba(56,189,248,0.12);
+            color: #38bdf8; border: 1px solid rgba(56,189,248,0.3);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .topbar-actions { display: flex; gap: 10px; align-items: center; }
+        .topbar-actions a {
+            font-size: 13px; font-weight: 600; padding: 8px 16px;
+            border-radius: 8px; text-decoration: none; transition: all 0.2s;
+        }
+        .btn-dash  { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+        .btn-dash:hover { background: #334155; color: #e2e8f0; }
+        .btn-logout { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .btn-logout:hover { background: rgba(239,68,68,0.2); }
+
+        /* ── layout ── */
+        .page { display: flex; min-height: calc(100vh - 65px); }
+
+        /* ── sidebar ── */
+        .sidebar {
+            width: 220px; flex-shrink: 0;
+            background: #0b1120;
+            border-right: 1px solid #1a2540;
+            padding: 24px 0;
+            position: sticky; top: 65px;
+            height: calc(100vh - 65px);
+            overflow-y: auto;
+        }
+        .sidebar-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px; font-weight: 700; letter-spacing: 2px;
+            text-transform: uppercase; color: #475569;
+            padding: 0 20px; margin-bottom: 10px;
+        }
+        .table-tab {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 11px 20px; cursor: pointer;
+            font-size: 13px; font-weight: 600; color: #64748b;
+            border-left: 3px solid transparent;
+            transition: all 0.15s; text-decoration: none;
+        }
+        .table-tab:hover { color: #94a3b8; background: rgba(56,189,248,0.04); }
+        .table-tab.active {
+            color: #38bdf8; background: rgba(56,189,248,0.08);
+            border-left-color: #38bdf8;
+        }
+        .tab-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px; font-weight: 700;
+            background: rgba(56,189,248,0.15); color: #38bdf8;
+            padding: 2px 7px; border-radius: 10px;
+        }
+        .table-tab.active .tab-count { background: #38bdf8; color: #020617; }
+
+        /* ── main content ── */
+        .content { flex: 1; padding: 28px 32px; overflow-x: auto; }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* ── section header ── */
+        .sec-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+        }
+        .sec-title {
+            font-size: 22px; font-weight: 800; color: #f1f5f9; letter-spacing: -0.4px;
+        }
+        .sec-title span {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px; font-weight: 400; color: #475569; margin-left: 10px;
+        }
+
+        /* ── filter bar ── */
+        .filter-bar {
+            display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px;
+        }
+        .filter-input {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px; padding: 8px 14px;
+            background: #0f172a; border: 1px solid #1e293b;
+            color: #e2e8f0; border-radius: 8px; outline: none;
+            transition: border-color 0.2s; min-width: 180px;
+        }
+        .filter-input:focus { border-color: #38bdf8; }
+        .filter-input::placeholder { color: #334155; }
+
+        /* ── table ── */
+        .db-table-wrap {
+            border-radius: 12px; overflow: hidden;
+            border: 1px solid #1a2540;
+            box-shadow: 0 0 30px rgba(0,0,0,0.4);
+        }
+        .db-table {
+            width: 100%; border-collapse: collapse;
+            font-family: 'JetBrains Mono', monospace; font-size: 12px;
+        }
+        .db-table thead tr {
+            background: #0d1829;
+        }
+        .db-table th {
+            padding: 12px 16px; text-align: left;
+            color: #38bdf8; font-size: 10px; font-weight: 700;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            border-bottom: 1px solid #1e293b; white-space: nowrap;
+        }
+        .db-table tbody tr {
+            border-bottom: 1px solid #0f1825;
+            transition: background 0.12s;
+        }
+        .db-table tbody tr:hover { background: rgba(56,189,248,0.04); }
+        .db-table tbody tr:last-child { border-bottom: none; }
+        .db-table td {
+            padding: 11px 16px; color: #94a3b8; white-space: nowrap;
+        }
+        .db-table td:first-child { color: #475569; }
+
+        /* ── pill badges ── */
+        .pill {
+            display: inline-block; padding: 2px 9px; border-radius: 20px;
+            font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+        }
+        .pill-yes     { background: rgba(34,197,94,0.12);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+        .pill-no      { background: rgba(239,68,68,0.12);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .pill-auto    { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+        .pill-manual  { background: rgba(167,139,250,0.12);color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); }
+        .pill-less    { background: rgba(239,68,68,0.12);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .pill-enough  { background: rgba(34,197,94,0.12);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+        .pill-excess  { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+        .pill-b { background: rgba(56,189,248,0.12); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); }
+        .pill-l { background: rgba(167,139,250,0.12);color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); }
+        .pill-d { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+
+        .empty-state {
+            padding: 60px 20px; text-align: center;
+            color: #334155; font-size: 13px;
+        }
+        .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+
+        /* ── stats strip ── */
+        .stats-strip {
+            display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;
+        }
+        .stat-chip {
+            background: #0d1829; border: 1px solid #1e293b; border-radius: 10px;
+            padding: 12px 18px; text-align: center; min-width: 110px;
+        }
+        .stat-chip .val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px; font-weight: 700; color: #38bdf8; display: block;
+        }
+        .stat-chip .lbl { font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-top: 3px; }
+
+        /* ── row count bar ── */
+        .row-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; color: #334155; margin-top: 12px; text-align: right;
+        }
+        .row-count b { color: #38bdf8; }
+
+        /* ── date chip ── */
+        .date-chip { color: #64748b; }
+    </style>
+</head>
+<body class="dark">
+
+<!-- TOP BAR -->
+<div class="topbar">
+    <div class="topbar-left">
+        <div class="topbar-title">🗄 Database Viewer</div>
+        <div class="topbar-badge">food_management.db</div>
+    </div>
+    <div class="topbar-actions">
+        <a href="/dashboard" class="topbar-actions btn-dash">← Dashboard</a>
+        <a href="/logout" class="topbar-actions btn-logout">Logout</a>
+    </div>
+</div>
+
+<div class="page">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="sidebar-label">Tables</div>
+
+        {% set tables = [
+            ('students',          'students',         '🎓', counts.students),
+            ('meal_bookings',     'meal_bookings',    '🍽', counts.meal_bookings),
+            ('meal_feedback',     'meal_feedback',    '📋', counts.meal_feedback),
+            ('meal_feedback_agg', 'meal_feedback_agg','📊', counts.meal_feedback_agg),
+            ('reset_log',         'reset_log',        '🔄', counts.reset_log),
+        ] %}
+
+        {% for key, name, icon, cnt in tables %}
+        <a class="table-tab {% if active_table == key %}active{% endif %}"
+           href="/admin/db?table={{ key }}">
+            {{ icon }} {{ name }}
+            <span class="tab-count">{{ cnt }}</span>
+        </a>
+        {% endfor %}
+    </nav>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+        <!-- ══════════════════════════════════════════════════════════
+             STUDENTS
+        ══════════════════════════════════════════════════════════ -->
+        {% if active_table == 'students' %}
+        <div class="sec-header">
+            <div class="sec-title">students <span>master list of valid reg numbers</span></div>
+        </div>
+        <div class="stats-strip">
+            <div class="stat-chip"><span class="val">{{ counts.students }}</span><div class="lbl">Total</div></div>
+        </div>
+        <div class="filter-bar">
+            <input class="filter-input" id="searchStudents" placeholder="🔍  Search reg number…" oninput="filterTable('tblStudents', this.value, [0,1])">
+        </div>
+        <div class="db-table-wrap">
+            <table class="db-table" id="tblStudents">
+                <thead><tr>
+                    <th>#</th><th>Reg Number</th><th>Created At</th>
+                </tr></thead>
+                <tbody>
+                {% for r in data %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td style="color:#38bdf8; font-weight:700;">{{ r.reg_number }}</td>
+                    <td class="date-chip">{{ r.created_at }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3"><div class="empty-state"><div class="icon">🫙</div>No records found</div></td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="row-count">Showing <b id="studentsCount">{{ data|length }}</b> rows</div>
+
+        <!-- ══════════════════════════════════════════════════════════
+             MEAL BOOKINGS
+        ══════════════════════════════════════════════════════════ -->
+        {% elif active_table == 'meal_bookings' %}
+        <div class="sec-header">
+            <div class="sec-title">meal_bookings <span>student meal preferences by date</span></div>
+        </div>
+        <div class="stats-strip">
+            <div class="stat-chip"><span class="val">{{ counts.meal_bookings }}</span><div class="lbl">Total Rows</div></div>
+            <div class="stat-chip"><span class="val">{{ extra.yes_count }}</span><div class="lbl">Yes Bookings</div></div>
+            <div class="stat-chip"><span class="val">{{ extra.no_count }}</span><div class="lbl">No Bookings</div></div>
+        </div>
+        <div class="filter-bar">
+            <input class="filter-input" id="searchBookings" placeholder="🔍  Search reg / date / meal…" oninput="filterTable('tblBookings', this.value, [1,2,3,4])">
+            <select class="filter-input" onchange="filterByCol('tblBookings', this.value, 3)">
+                <option value="">All Meals</option>
+                <option>breakfast</option><option>lunch</option><option>dinner</option>
+            </select>
+            <select class="filter-input" onchange="filterByCol('tblBookings', this.value, 4)">
+                <option value="">Yes / No</option>
+                <option>Yes</option><option>No</option>
+            </select>
+        </div>
+        <div class="db-table-wrap">
+            <table class="db-table" id="tblBookings">
+                <thead><tr>
+                    <th>#</th><th>Reg Number</th><th>Target Date</th>
+                    <th>Meal</th><th>Choice</th><th>Submissions</th><th>Updated At</th>
+                </tr></thead>
+                <tbody>
+                {% for r in data %}
+                <tr>
+                    <td>{{ r.id }}</td>
+                    <td style="color:#e2e8f0; font-weight:600;">{{ r.reg_number }}</td>
+                    <td class="date-chip">{{ r.target_date }}</td>
+                    <td>
+                        {% if r.meal == 'breakfast' %}<span class="pill pill-b">🍳 {{ r.meal }}</span>
+                        {% elif r.meal == 'lunch' %}<span class="pill pill-l">🍛 {{ r.meal }}</span>
+                        {% else %}<span class="pill pill-d">🌙 {{ r.meal }}</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if r.choice == 'Yes' %}<span class="pill pill-yes">✔ Yes</span>
+                        {% else %}<span class="pill pill-no">✘ No</span>{% endif %}
+                    </td>
+                    <td style="color:#38bdf8; text-align:center;">{{ r.submission_count }}</td>
+                    <td class="date-chip">{{ r.updated_at }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7"><div class="empty-state"><div class="icon">🫙</div>No bookings yet</div></td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="row-count">Showing <b id="bookingsCount">{{ data|length }}</b> rows</div>
+
+        <!-- ══════════════════════════════════════════════════════════
+             MEAL FEEDBACK
+        ══════════════════════════════════════════════════════════ -->
+        {% elif active_table == 'meal_feedback' %}
+        <div class="sec-header">
+            <div class="sec-title">meal_feedback <span>individual taste & quantity ratings</span></div>
+        </div>
+        <div class="stats-strip">
+            <div class="stat-chip"><span class="val">{{ counts.meal_feedback }}</span><div class="lbl">Total Rows</div></div>
+            <div class="stat-chip"><span class="val">{{ extra.avg_rating }}</span><div class="lbl">Avg Rating</div></div>
+        </div>
+        <div class="filter-bar">
+            <input class="filter-input" placeholder="🔍  Search reg / date / meal…" oninput="filterTable('tblFeedback', this.value, [1,2,3])">
+            <select class="filter-input" onchange="filterByCol('tblFeedback', this.value, 3)">
+                <option value="">All Meals</option>
+                <option>breakfast</option><option>lunch</option><option>dinner</option>
+            </select>
+            <select class="filter-input" onchange="filterByCol('tblFeedback', this.value, 5)">
+                <option value="">All Quantities</option>
+                <option>Less</option><option>Enough</option><option>Excess</option>
+            </select>
+        </div>
+        <div class="db-table-wrap">
+            <table class="db-table" id="tblFeedback">
+                <thead><tr>
+                    <th>#</th><th>Reg Number</th><th>Date</th>
+                    <th>Meal</th><th>Rating</th><th>Quantity</th><th>Submitted At</th>
+                </tr></thead>
+                <tbody>
+                {% for r in data %}
+                <tr>
+                    <td>{{ r.id }}</td>
+                    <td style="color:#e2e8f0; font-weight:600;">{{ r.reg_number }}</td>
+                    <td class="date-chip">{{ r.feedback_date }}</td>
+                    <td>
+                        {% if r.meal == 'breakfast' %}<span class="pill pill-b">🍳 {{ r.meal }}</span>
+                        {% elif r.meal == 'lunch' %}<span class="pill pill-l">🍛 {{ r.meal }}</span>
+                        {% else %}<span class="pill pill-d">🌙 {{ r.meal }}</span>{% endif %}
+                    </td>
+                    <td>
+                        <span style="color:#fbbf24; font-weight:700;">
+                        {{ '⭐' * r.rating }} ({{ r.rating }})
+                        </span>
+                    </td>
+                    <td>
+                        {% if r.quantity == 'Less' %}<span class="pill pill-less">Less</span>
+                        {% elif r.quantity == 'Enough' %}<span class="pill pill-enough">Enough</span>
+                        {% else %}<span class="pill pill-excess">Excess</span>{% endif %}
+                    </td>
+                    <td class="date-chip">{{ r.submitted_at }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7"><div class="empty-state"><div class="icon">🫙</div>No feedback yet</div></td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="row-count">Showing <b>{{ data|length }}</b> rows</div>
+
+        <!-- ══════════════════════════════════════════════════════════
+             FEEDBACK AGG
+        ══════════════════════════════════════════════════════════ -->
+        {% elif active_table == 'meal_feedback_agg' %}
+        <div class="sec-header">
+            <div class="sec-title">meal_feedback_agg <span>daily aggregate totals per meal</span></div>
+        </div>
+        <div class="filter-bar">
+            <input class="filter-input" placeholder="🔍  Search date / meal…" oninput="filterTable('tblAgg', this.value, [0,1])">
+            <select class="filter-input" onchange="filterByCol('tblAgg', this.value, 1)">
+                <option value="">All Meals</option>
+                <option>breakfast</option><option>lunch</option><option>dinner</option>
+            </select>
+        </div>
+        <div class="db-table-wrap">
+            <table class="db-table" id="tblAgg">
+                <thead><tr>
+                    <th>Date</th><th>Meal</th><th>Avg Rating</th>
+                    <th>Rating Count</th><th>Qty: Less</th><th>Qty: Enough</th><th>Qty: Excess</th>
+                </tr></thead>
+                <tbody>
+                {% for r in data %}
+                <tr>
+                    <td class="date-chip">{{ r.agg_date }}</td>
+                    <td>
+                        {% if r.meal == 'breakfast' %}<span class="pill pill-b">🍳 {{ r.meal }}</span>
+                        {% elif r.meal == 'lunch' %}<span class="pill pill-l">🍛 {{ r.meal }}</span>
+                        {% else %}<span class="pill pill-d">🌙 {{ r.meal }}</span>{% endif %}
+                    </td>
+                    <td style="color:#fbbf24; font-weight:700;">
+                        {% if r.rating_count > 0 %}
+                            {{ "%.2f"|format(r.total_rating / r.rating_count) }} ⭐
+                        {% else %}—{% endif %}
+                    </td>
+                    <td style="color:#38bdf8; text-align:center;">{{ r.rating_count }}</td>
+                    <td><span class="pill pill-less">{{ r.qty_less }}</span></td>
+                    <td><span class="pill pill-enough">{{ r.qty_enough }}</span></td>
+                    <td><span class="pill pill-excess">{{ r.qty_excess }}</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7"><div class="empty-state"><div class="icon">🫙</div>No aggregates yet</div></td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="row-count">Showing <b>{{ data|length }}</b> rows</div>
+
+        <!-- ══════════════════════════════════════════════════════════
+             RESET LOG
+        ══════════════════════════════════════════════════════════ -->
+        {% elif active_table == 'reset_log' %}
+        <div class="sec-header">
+            <div class="sec-title">reset_log <span>auto & manual reset history</span></div>
+        </div>
+        <div class="stats-strip">
+            <div class="stat-chip"><span class="val">{{ counts.reset_log }}</span><div class="lbl">Total Resets</div></div>
+            <div class="stat-chip"><span class="val">{{ extra.auto_resets }}</span><div class="lbl">Auto</div></div>
+            <div class="stat-chip"><span class="val">{{ extra.manual_resets }}</span><div class="lbl">Manual</div></div>
+        </div>
+        <div class="filter-bar">
+            <input class="filter-input" placeholder="🔍  Search date / meal / reason…" oninput="filterTable('tblReset', this.value, [1,2,3])">
+            <select class="filter-input" onchange="filterByCol('tblReset', this.value, 3)">
+                <option value="">All Reasons</option>
+                <option>auto</option><option>manual</option>
+            </select>
+        </div>
+        <div class="db-table-wrap">
+            <table class="db-table" id="tblReset">
+                <thead><tr>
+                    <th>#</th><th>Reset Date</th><th>Meal</th><th>Reason</th><th>Reset At</th>
+                </tr></thead>
+                <tbody>
+                {% for r in data %}
+                <tr>
+                    <td>{{ r.id }}</td>
+                    <td class="date-chip">{{ r.reset_date }}</td>
+                    <td>
+                        {% if r.meal == 'breakfast' %}<span class="pill pill-b">🍳 {{ r.meal }}</span>
+                        {% elif r.meal == 'lunch' %}<span class="pill pill-l">🍛 {{ r.meal }}</span>
+                        {% else %}<span class="pill pill-d">🌙 {{ r.meal }}</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if r.reason == 'auto' %}<span class="pill pill-auto">⚡ auto</span>
+                        {% else %}<span class="pill pill-manual">🖐 manual</span>{% endif %}
+                    </td>
+                    <td class="date-chip">{{ r.reset_at }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5"><div class="empty-state"><div class="icon">🫙</div>No resets logged yet</div></td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="row-count">Showing <b>{{ data|length }}</b> rows</div>
+        {% endif %}
+
+    </div><!-- /content -->
+</div><!-- /page -->
+
+<script>
+function filterTable(tableId, query, cols) {
+    const tbl   = document.getElementById(tableId);
+    if (!tbl) return;
+    const rows  = tbl.querySelectorAll('tbody tr');
+    const q     = query.toLowerCase();
+    let shown   = 0;
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const match = cols.some(i => cells[i] && cells[i].textContent.toLowerCase().includes(q));
+        row.style.display = match ? '' : 'none';
+        if (match) shown++;
+    });
+}
+
+function filterByCol(tableId, value, colIndex) {
+    const tbl  = document.getElementById(tableId);
+    if (!tbl) return;
+    const rows = tbl.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const cell = row.querySelectorAll('td')[colIndex];
+        if (!value || (cell && cell.textContent.trim().toLowerCase().includes(value.toLowerCase()))) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+</body>
+</html>
